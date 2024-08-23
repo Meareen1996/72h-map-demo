@@ -3,9 +3,24 @@ import { Modal, Form, Input, Select, Button } from 'antd'; // 假设您在项目
 
 const { Option } = Select;
 
-const AddGeofenceModal = ({ visible, onCreate,onCancel }) => {
+const colors = [
+    { value: '#FF0000', label: '红色' },
+    { value: '#00FF00', label: '绿色' },
+    { value: '#0000FF', label: '蓝色' },
+    { value: '#FFFF00', label: '黄色' },
+    { value: '#FFA500', label: '橙色' },
+    { value: '#800080', label: '紫色' },
+    { value: '#00FFFF', label: '青色' },
+    { value: '#FFC0CB', label: '粉色' },
+    { value: '#808080', label: '灰色' },
+    { value: '#A52A2A', label: '棕色' },
+    { value: '#000000', label: '黑色' },
+    { value: '#FFFFFF', label: '白色' }
+]
+
+const AddGeofenceModal = ({ visible, onCreate, onCancel }) => {
     const [form] = Form.useForm();
-    
+
     const onFinish = (values) => {
         onCreate(values);
         form.resetFields();
@@ -23,7 +38,7 @@ const AddGeofenceModal = ({ visible, onCreate,onCancel }) => {
                     onFinish(values);
                 });
             }}
-           
+
         >
             <Form
                 form={form}
@@ -38,28 +53,25 @@ const AddGeofenceModal = ({ visible, onCreate,onCancel }) => {
                     <Input />
                 </Form.Item>
                 <Form.Item
-                    name="borderColor"
+                    name="strokeColor"
                     label="Border Color"
                     rules={[{ required: true, message: 'Please select a border color!' }]}
                 >
-                    <Select>
-                        <Option value="red">Red</Option>
-                        <Option value="blue">Blue</Option>
-                        <Option value="green">Green</Option>
-                        {/* 可根据需要添加更多颜色选项 */}
-                    </Select>
+                    <Select
+                        defaultValue="#0000FF"
+                        options={colors}
+                    />
+
                 </Form.Item>
                 <Form.Item
                     name="fillColor"
                     label="Fill Color"
                     rules={[{ required: true, message: 'Please select a fill color!' }]}
                 >
-                    <Select>
-                        <Option value="yellow">Yellow</Option>
-                        <Option value="purple">Purple</Option>
-                        <Option value="orange">Orange</Option>
-                        {/* 可根据需要添加更多颜色选项 */}
-                    </Select>
+                    <Select
+                        defaultValue="#0000FF"
+                        options={colors}
+                    />
                 </Form.Item>
             </Form>
 
