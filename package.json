@@ -25,12 +25,19 @@
     "build": "cross-env NODE_ENV=production webpack --config build/webpack.prod.conf.js",
     "lint:fix": "eslint --ext ts,tsx src --fix",
     "lintcss": "stylelint --syntax scss src/**/*.{css,scss}",
-    "lintcss:fix": "stylelint --syntax scss src/**/*.{css,scss} --fix"
+    "lintcss:fix": "stylelint --syntax scss src/**/*.{css,scss} --fix",
+    "prepare": "husky install"
   },
   "eslintConfig": {
     "extends": [
       "react-app",
       "react-app/jest"
+    ]
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix",
+      "git add"
     ]
   },
   "browserslist": {
@@ -53,6 +60,9 @@
     "@babel/preset-env": "^7.25.3",
     "@babel/preset-react": "^7.24.7",
     "@babel/preset-typescript": "^7.24.7",
+    "@commitlint/cli": "^19.4.0",
+    "@commitlint/config-conventional": "^19.2.2",
+    "@eslint/js": "^9.9.0",
     "@testing-library/jest-dom": "^6.4.8",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.2",
@@ -64,7 +74,11 @@
     "css-loader": "^7.1.2",
     "css-minimizer-webpack-plugin": "^7.0.0",
     "eslint": "^9.9.0",
+    "eslint-plugin-react": "^7.35.0",
+    "globals": "^15.9.0",
     "html-webpack-plugin": "^5.6.0",
+    "husky": "^8.0.0",
+    "lint-staged": "^15.2.9",
     "mini-css-extract-plugin": "^2.9.1",
     "postcss-loader": "^8.1.1",
     "react-scripts": "^5.0.1",

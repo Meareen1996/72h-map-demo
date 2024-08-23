@@ -1,6 +1,5 @@
 const dbName = 'GeofenceDB';
 const storeName = 'geofences';
-
 /**
  * Opens a connection to the indexedDB database.
  * @returns {Promise<IDBDatabase>} A Promise that resolves with the opened IDBDatabase instance.
