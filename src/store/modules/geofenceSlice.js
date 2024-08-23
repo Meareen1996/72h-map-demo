@@ -10,16 +10,15 @@ export const loadGeofences = createAsyncThunk('geofences/loadGeofences', async (
 
 const geofenceSlice = createSlice({
   name: 'geofences',
-  initialState: [],
+  initialState: {
+    geofences: [],
+    status: 'idle',  // 用于跟踪加载状态
+    error: null,
+  },
   reducers: {
-    initialState: {
-      geofences: [],
-      status: 'idle',  // 用于跟踪加载状态
-      error: null,
-    },
 
     addGeofence: (state, action) => {
-      console.log("state--->",state)
+      console.log("state--->", state)
       // debugger
       state.geofences.push(action.payload);  // 添加新的地理围栏
       try {

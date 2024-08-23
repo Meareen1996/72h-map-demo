@@ -11,7 +11,8 @@ const containerStyle = {
   height: 'calc(100% - 60px)'
 };
 const libraries = ['drawing', 'marker'];
-const mapKey = 'AIzaSyAyZ4S3bvIDOyrKYR3IGpjl9YmVPVZn_9M'; // 替换为你的实际API密钥
+// const mapKey = 'AIzaSyAyZ4S3bvIDOyrKYR3IGpjl9YmVPVZn_9M'; // 替换为你的实际API密钥
+const mapKey = 'AIzaSyCYEjZVnDQWY01I6XMdQq5pj8FXsvu2V28'; // 替换为你的实际API密钥
 
 /**
  * React 组件，用于渲染带有地理围栏功能的地图。
@@ -21,8 +22,7 @@ const MapComponent = () => {
   const dispatch = useDispatch();
   // 从 Redux 中获取地理围栏数据
   const { geofences, status } = useSelector(state => state.geofences);
-  console.log("geofences---->", geofences)
-  console.log("addGeofence--", addGeofence)
+ 
   useEffect(() => {
     // 页面加载时，从 IndexedDB 加载地理围栏数据
     if (status === 'idle') {
@@ -31,14 +31,10 @@ const MapComponent = () => {
 
   }, [dispatch, status]);
 
-  useEffect(() => {
-    console.log("geofences---->222", geofences)
-  }, [geofences])
-
+ 
   const [map, setMap] = useState(null);
   const [drawing, setDrawing] = useState(false);
   const [currentPolygon, setCurrentPolygon] = useState([]);
-  // const [geofences, setGeofences] = useState([]); //1.移除
   const [userLocation, setUserLocation] = useState(null);
   const [selectedGeofence, setSelectedGeofence] = useState(null);
   const [visiblePop, setVisiblePop] = useState(false);
@@ -121,16 +117,6 @@ const MapComponent = () => {
 
       // 派发 Redux 动作，更新地理围栏
       dispatch(editGeofence({ id: geofenceId, newGeofence: { ...selectedGeofence, paths: updatedPaths } }));
-      // console.log("更新编辑后的---->", updatedPaths)
-      // setCurrentPolygon(updatedPaths)
-      // // 更新状态中的 geofence
-      // setGeofences((prevGeofences) =>
-      //   prevGeofences.map((gf) =>
-      //     gf.id === geofenceId ? { ...gf, paths: updatedPaths } : gf
-      //   )
-      // );
-
-
     }
   };
 
@@ -152,16 +138,6 @@ const MapComponent = () => {
     }
     // 派发 Redux 动作，删除地理围栏
     dispatch(deleteGeofence(selectedGeofence.id));
-    // 从 geofences 数组中删除选中的地理围栏
-    // setGeofences((prevGeofences) => {
-    //   const updatedGeofences = prevGeofences.filter((gf) => gf.id !== selectedGeofence.id);
-
-    //   // 从 polygonRefs 中删除相应的引用
-    //   const { [selectedGeofence.id]: _, ...remainingRefs } = polygonRefs.current;
-    //   polygonRefs.current = remainingRefs;
-
-    //   return updatedGeofences; // 返回新数组
-    // });
 
     // 清空当前选中的地理围栏
     setSelectedGeofence(null);
