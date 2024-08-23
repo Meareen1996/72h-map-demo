@@ -5,6 +5,7 @@ import ConfigPop from '@components/configPop';
 import './map.scss';
 import { v4 as uuidv4 } from 'uuid';
 
+
 const containerStyle = {
   width: '100%',
   height: 'calc(100% - 60px)'
@@ -26,11 +27,12 @@ const MapComponent = () => {
     name: "",
     strokeColor: "",
     fillColor: "",
-    visible:true
+    visible: true
   });
-
   const libraries = ["drawing"];
   const mapKey = 'AIzaSyAyZ4S3bvIDOyrKYR3IGpjl9YmVPVZn_9M'; // 替换为你的实际API密钥
+
+  const polygonRefs = useRef({});  // 存储每个 geofence 的 Polygon 实例引用
 
   // 获取用户位置以便居中地图
   const getUserLocation = () => {
@@ -85,30 +87,69 @@ const MapComponent = () => {
     setDrawing(false);
   };
 
-  // 编辑地理围栏
-  const handleGeofenceEdit = (polygon, geofenceId) => {
-    const paths = polygon.getPath().getArray().map((latLng) => ({
-      lat: latLng.lat(),
-      lng: latLng.lng(),
-    }));
-    setGeofences((prevGeofences) =>
-      prevGeofences.map((gf) => (gf.id === geofenceId ? { ...gf, paths } : gf))
-    );
+  // 更新 geofence 的路径数据
+  const handleGeofenceEdit = (geofenceId) => {
+    const polygon = polygonRefs.current[geofenceId];  // 获取对应的 Polygon 引用
+    console.log("编辑后的---->", polygon)
+    if (polygon) {
+      const updatedPaths = polygon
+        .getPath()
+        .getArray()
+        .map((latLng) => ({
+          lat: latLng.lat(),
+          lng: latLng.lng(),
+        }));
+      console.log("更新编辑后的---->", updatedPaths)
+      setCurrentPolygon(updatedPaths)
+      // 更新状态中的 geofence
+      setGeofences((prevGeofences) =>
+        prevGeofences.map((gf) =>
+          gf.id === geofenceId ? { ...gf, paths: updatedPaths } : gf
+        )
+      );
+
+
+    }
   };
 
-  // 点击地理围栏
+  // 点击地理围栏(选中围栏)
   const handleGeofenceClick = (geofenceId) => {
     const selected = geofences.find((geo) => geo.id === geofenceId);
+    console.log("selected---->", selected);
     setSelectedGeofence(selected);
   };
 
-  // 删除地理围栏
+  /**
+   * 
+   * @returns 删除操作
+   */
   const handleDeleteGeofence = () => {
-    if (selectedGeofence) {
-      setGeofences(geofences.filter((gf) => gf.id !== selectedGeofence.id));
-      setSelectedGeofence(null);
+    if (!selectedGeofence) {
+      message.error("没有选中的地理围栏");
+      return;
     }
+    // 从 geofences 数组中删除选中的地理围栏
+    setGeofences((prevGeofences) => {
+      const updatedGeofences = prevGeofences.filter((gf) => gf.id !== selectedGeofence.id);
+
+      // 从 polygonRefs 中删除相应的引用
+      const { [selectedGeofence.id]: _, ...remainingRefs } = polygonRefs.current;
+      polygonRefs.current = remainingRefs;
+
+      return updatedGeofences; // 返回新数组
+    });
+
+    // 清空当前选中的地理围栏
+    setSelectedGeofence(null);
   };
+
+  // useEffect 监控 geofences 变化
+  useEffect(() => {
+    console.log('Updated geofences after deletion:', geofences);
+    if (selectedGeofence && !geofences.some(gf => gf.id === selectedGeofence.id)) {
+      setSelectedGeofence(null); // 清除已删除的选中状态
+    }
+  }, [geofences]);
 
   return (
     <>
@@ -143,21 +184,22 @@ const MapComponent = () => {
             )}
 
             {/* 渲染地理围栏 */}
-            {geofences && geofences.map((geo, index) => (
+            {geofences && geofences?.length > 0 && geofences.map((geo, index) => (
               <Polygon
                 key={geo.id}
                 paths={geo.paths}
                 options={{
                   fillColor: geo.fillColor,
                   strokeColor: geo.strokeColor,
-                  visible:geo.visible,
+                  visible: geo.visible,
                   fillOpacity: 0.6,
                   strokeWeight: 2,
                   editable: true, // 启用编辑
                   draggable: true,
                 }}
+                onLoad={(polygon) => (polygonRefs.current[geo.id] = polygon)}
                 onClick={() => handleGeofenceClick(geo.id)}
-                onMouseUp={(e) => handleGeofenceEdit(e, geo.id)}
+                onMouseUp={() => handleGeofenceEdit(geo.id)}
               />
             ))}
 
