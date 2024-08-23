@@ -1,40 +1,67 @@
-import React, { useState } from 'react';
-import { Table, Input } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { Table, Button, Input, Checkbox } from 'antd';
+import { deleteGeofence } from '@store/modules/geofenceSlice';
 
-const MyTableComponent = ({ initialData }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filteredData, setFilteredData] = useState(initialData);
+const ListComponent = () => {
+  const dispatch = useDispatch();
+  const geofences = useSelector(state => state.geofences.geofences);
+  const [filteredGeofences, setFilteredGeofences] = useState(geofences);
+  const [searchValue, setSearchValue] = useState("");
 
-  const handleSearch = (e) => {
-    const { value } = e.target;
-    setSearchTerm(value);
-    const lowercasedValue = value.toLowerCase();
-    const filtered = initialData.filter(item =>
-      item.name.toLowerCase().includes(lowercasedValue)
+  useEffect(() => {
+    setFilteredGeofences(geofences);  // 每次 Redux 中数据更新时，更新列表
+  }, [geofences]);
+
+  // 搜索过滤功能
+  const handleSearch = (value) => {
+    setSearchValue(value);
+    const filtered = geofences.filter((geofence) =>
+      geofence.name.toLowerCase().includes(value.toLowerCase())
     );
-    setFilteredData(filtered);
+    setFilteredGeofences(filtered);
   };
 
+  // 批量删除
+  const handleDelete = (ids) => {
+    ids.forEach(id => {
+      dispatch(deleteGeofence(id));
+    });
+  };
+
+  // 列定义
+  const columns = [
+    { title: 'Name', dataIndex: 'name', key: 'name' },
+    { title: 'Border Color', dataIndex: 'strokeColor', key: 'strokeColor' },
+    { title: 'Fill Color', dataIndex: 'fillColor', key: 'fillColor' },
+    { title: 'Date Added', dataIndex: 'dateAdded', key: 'dateAdded' },
+    { title: 'Coordinates', dataIndex: 'paths', key: 'paths', render: paths => JSON.stringify(paths) },
+    { title: 'Visible', key: 'visible', render: (_, record) => (
+      <Checkbox checked={record.visible} />
+    )},
+    { title: 'Action', key: 'action', render: (_, record) => (
+      <Button onClick={() => handleDelete([record.id])}>Delete</Button>
+    )},
+  ];
+
   return (
-    <div>
-      <Input
-        placeholder="Search by name"
-        value={searchTerm}
-        onChange={handleSearch}
-        style={{ marginBottom: 16 }}
+    <>
+      <Input.Search
+        placeholder="Search by geofence name"
+        onSearch={handleSearch}
+        enterButton
+        value={searchValue}
+        onChange={(e) => handleSearch(e.target.value)}
+        style={{ marginBottom: 20 }}
       />
       <Table
-        columns={[
-          { title: 'Name', dataIndex: 'name', key: 'name' },
-          { title: 'Border Color', dataIndex: 'borderColor', key: 'borderColor' },
-          { title: 'Fill Color', dataIndex: 'fillColor', key: 'fillColor' },
-          { title: 'Added Date', dataIndex: 'addedDate', key: 'addedDate' },
-          { title: 'Coordinates', dataIndex: 'coordinates', key: 'coordinates' },
-        ]}
-        dataSource={filteredData}
+        columns={columns}
+        dataSource={filteredGeofences}
+        rowKey="id"
+        pagination={{ pageSize: 5 }}
       />
-    </div>
+    </>
   );
 };
 
-export default MyTableComponent;
+export default ListComponent;

@@ -33,7 +33,9 @@ module.exports = {
       "alias": {
         "@components": "./src/components",
         "@assets": "./src/assets",
-        "@pages": "./src/pages"
+        "@pages": "./src/pages",
+        '@store': './src/store',
+        "@utils": "./src/utils",
       }
     }]
 

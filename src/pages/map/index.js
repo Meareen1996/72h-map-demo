@@ -4,22 +4,41 @@ import { Space, Button, message } from 'antd';
 import ConfigPop from '@components/configPop';
 import './map.scss';
 import { v4 as uuidv4 } from 'uuid';
-
-
+import { useDispatch, useSelector } from 'react-redux';
+import { addGeofence, editGeofence, deleteGeofence, loadGeofences } from '@store/modules/geofenceSlice';  // 从 Redux 中导入相应的 actions
 const containerStyle = {
   width: '100%',
   height: 'calc(100% - 60px)'
 };
+const libraries = ['drawing', 'marker'];
+const mapKey = 'AIzaSyAyZ4S3bvIDOyrKYR3IGpjl9YmVPVZn_9M'; // 替换为你的实际API密钥
 
 /**
  * React 组件，用于渲染带有地理围栏功能的地图。
  * 该组件管理在Google地图上绘制多边形，编辑现有的地理围栏，删除地理围栏以及通过配置弹窗添加新的地理围栏。
  */
 const MapComponent = () => {
+  const dispatch = useDispatch();
+  // 从 Redux 中获取地理围栏数据
+  const { geofences, status } = useSelector(state => state.geofences);
+  console.log("geofences---->", geofences)
+  console.log("addGeofence--", addGeofence)
+  useEffect(() => {
+    // 页面加载时，从 IndexedDB 加载地理围栏数据
+    if (status === 'idle') {
+      dispatch(loadGeofences());
+    }
+
+  }, [dispatch, status]);
+
+  useEffect(() => {
+    console.log("geofences---->222", geofences)
+  }, [geofences])
+
   const [map, setMap] = useState(null);
   const [drawing, setDrawing] = useState(false);
   const [currentPolygon, setCurrentPolygon] = useState([]);
-  const [geofences, setGeofences] = useState([]);
+  // const [geofences, setGeofences] = useState([]); //1.移除
   const [userLocation, setUserLocation] = useState(null);
   const [selectedGeofence, setSelectedGeofence] = useState(null);
   const [visiblePop, setVisiblePop] = useState(false);
@@ -29,8 +48,6 @@ const MapComponent = () => {
     fillColor: "",
     visible: true
   });
-  const libraries = ["drawing"];
-  const mapKey = 'AIzaSyAyZ4S3bvIDOyrKYR3IGpjl9YmVPVZn_9M'; // 替换为你的实际API密钥
 
   const polygonRefs = useRef({});  // 存储每个 geofence 的 Polygon 实例引用
 
@@ -82,12 +99,14 @@ const MapComponent = () => {
       ...geofence,
       paths: currentPolygon,
     };
-    setGeofences([...geofences, newGeofence]);
+    dispatch(addGeofence(newGeofence));
     setCurrentPolygon([]);
     setDrawing(false);
   };
 
   // 更新 geofence 的路径数据
+  // 当前的编辑逻辑是在拖动或修改围栏时，获取`polygon`的`getPath`数据并更新多边形
+  // 为了与redux结合，需要在编辑完成后派发一个`updateGeofense`动作
   const handleGeofenceEdit = (geofenceId) => {
     const polygon = polygonRefs.current[geofenceId];  // 获取对应的 Polygon 引用
     console.log("编辑后的---->", polygon)
@@ -99,14 +118,17 @@ const MapComponent = () => {
           lat: latLng.lat(),
           lng: latLng.lng(),
         }));
-      console.log("更新编辑后的---->", updatedPaths)
-      setCurrentPolygon(updatedPaths)
-      // 更新状态中的 geofence
-      setGeofences((prevGeofences) =>
-        prevGeofences.map((gf) =>
-          gf.id === geofenceId ? { ...gf, paths: updatedPaths } : gf
-        )
-      );
+
+      // 派发 Redux 动作，更新地理围栏
+      dispatch(editGeofence({ id: geofenceId, newGeofence: { ...selectedGeofence, paths: updatedPaths } }));
+      // console.log("更新编辑后的---->", updatedPaths)
+      // setCurrentPolygon(updatedPaths)
+      // // 更新状态中的 geofence
+      // setGeofences((prevGeofences) =>
+      //   prevGeofences.map((gf) =>
+      //     gf.id === geofenceId ? { ...gf, paths: updatedPaths } : gf
+      //   )
+      // );
 
 
     }
@@ -128,16 +150,18 @@ const MapComponent = () => {
       message.error("没有选中的地理围栏");
       return;
     }
+    // 派发 Redux 动作，删除地理围栏
+    dispatch(deleteGeofence(selectedGeofence.id));
     // 从 geofences 数组中删除选中的地理围栏
-    setGeofences((prevGeofences) => {
-      const updatedGeofences = prevGeofences.filter((gf) => gf.id !== selectedGeofence.id);
+    // setGeofences((prevGeofences) => {
+    //   const updatedGeofences = prevGeofences.filter((gf) => gf.id !== selectedGeofence.id);
 
-      // 从 polygonRefs 中删除相应的引用
-      const { [selectedGeofence.id]: _, ...remainingRefs } = polygonRefs.current;
-      polygonRefs.current = remainingRefs;
+    //   // 从 polygonRefs 中删除相应的引用
+    //   const { [selectedGeofence.id]: _, ...remainingRefs } = polygonRefs.current;
+    //   polygonRefs.current = remainingRefs;
 
-      return updatedGeofences; // 返回新数组
-    });
+    //   return updatedGeofences; // 返回新数组
+    // });
 
     // 清空当前选中的地理围栏
     setSelectedGeofence(null);
@@ -150,6 +174,24 @@ const MapComponent = () => {
       setSelectedGeofence(null); // 清除已删除的选中状态
     }
   }, [geofences]);
+
+  //标记点
+  useEffect(() => {
+    if (userLocation && map) {
+      // 创建自定义标记的 DOM 元素
+      const markerElement = document.createElement('div');
+      markerElement.innerHTML = `<div style="color: blue; font-size: 16px;">您在这里</div>`;
+
+      // 创建 AdvancedMarkerElement
+      const marker = new google.maps.marker.AdvancedMarkerElement({
+        position: userLocation,
+        map: map,
+        content: markerElement,  // 自定义的标记内容
+      });
+
+    }
+  }, [userLocation, map]);
+
 
   return (
     <>
@@ -195,7 +237,7 @@ const MapComponent = () => {
                   fillOpacity: 0.6,
                   strokeWeight: 2,
                   editable: true, // 启用编辑
-                  draggable: true,
+
                 }}
                 onLoad={(polygon) => (polygonRefs.current[geo.id] = polygon)}
                 onClick={() => handleGeofenceClick(geo.id)}
@@ -203,16 +245,13 @@ const MapComponent = () => {
               />
             ))}
 
-            <Marker
-              position={userLocation}
-              label="您在这里"
-              animation={window.google.maps.Animation.BOUNCE}
-            />
+
           </GoogleMap>
         )}
       </LoadScript>
 
       {/* 添加地理围栏的配置弹窗 */}
+      {/* 在配置弹框中 ，填写地理围栏的名称、颜色等信息后，需要通过`dispatch`方法提交到 Redux 中。 */}
       <ConfigPop
         visible={visiblePop}
         onCancel={() => setVisiblePop(false)}
@@ -224,6 +263,8 @@ const MapComponent = () => {
           setVisiblePop(false);
         }}
       />
+      {/* 上述逻辑会更新 geofence 对象，
+      之后在 handleCompleteDrawing 中将新建的地理围栏添加到 Redux。 */}
     </>
   );
 };
