@@ -1,7 +1,5 @@
 const path = require('path');
-const webpack = require('webpack');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const DonePlugin = require('./donePlugin'); // 假设这是自定义插件
 const _PROD_ = process.env.NODE_ENV === 'production';
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
@@ -166,7 +164,6 @@ module.exports = {
   },
 
   plugins: [
-    new DonePlugin(), // Assuming DonePlugin is defined somewhere
 
     // 生产环境下提取 CSS 到独立文件中
     new MiniCssExtractPlugin({

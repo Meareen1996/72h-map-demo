@@ -4,7 +4,7 @@ import './index.css';
 import reportWebVitals from './reportWebVitals';
 import router from './router';
 import { RouterProvider } from "react-router-dom";
-import ErrorBoundary from '@components/errorBoundary';  // 引入ErrorBoundary组件
+// import ErrorBoundary from '@components/errorBoundary';  // 引入ErrorBoundary组件
 import { Provider } from 'react-redux';  // Import Provider from react-redux
 import store from './store';  // Import your Redux store
 
@@ -12,11 +12,11 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 
 root.render(
   <React.StrictMode>
-    <ErrorBoundary>
+    {/* <ErrorBoundary> */}
       <Provider store={store}>  {/* Wrap RouterProvider with Provider */}
         <RouterProvider router={router} />
       </Provider>
-    </ErrorBoundary>
+    {/* </ErrorBoundary> */}
   </React.StrictMode>
 );
 

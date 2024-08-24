@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { GoogleMap, LoadScript, Polyline } from "@react-google-maps/api";
+import {
+  GoogleMap,
+  Polyline,
+  useJsApiLoader,
+} from "@react-google-maps/api";
 import { Space, Button, message } from "antd";
 import ConfigPop from "@components/configPop";
 import "./map.scss";
@@ -49,6 +53,10 @@ const generateChineseName = () => {
  * 该组件管理在Google地图上绘制多边形，编辑现有的地理围栏，删除地理围栏以及通过配置弹窗添加新的地理围栏。
  */
 const MapComponent = () => {
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: mapKey,
+    libraries: libraries,
+  });
   const dispatch = useDispatch();
   const { geofences } = useGeofences();
   const [map, setMap] = useState(null);
@@ -70,14 +78,17 @@ const MapComponent = () => {
   // -----右键菜单编辑start------
   const [contextMenu, setContextMenu] = useState(null); // 上下文菜单状态
 
-//  点击右键菜单
+  //  点击右键菜单
   const handlePolygonRightClick = useCallback((event, geo) => {
     const polygon = polygonRefs.current[geo.id];
     if (polygon) {
-      const updatedPaths = polygon.getPath().getArray().map(latLng => ({
-        lat: latLng.lat(),
-        lng: latLng.lng(),
-      }));
+      const updatedPaths = polygon
+        .getPath()
+        .getArray()
+        .map((latLng) => ({
+          lat: latLng.lat(),
+          lng: latLng.lng(),
+        }));
       setSelectedGeofence({ ...geo, paths: updatedPaths });
       setContextMenu({
         position: { x: event.domEvent.clientX, y: event.domEvent.clientY },
@@ -113,7 +124,7 @@ const MapComponent = () => {
       setUserLocation(defaultLocation);
     }
   }, []);
- 
+
   useEffect(() => {
     getUserLocation();
   }, [getUserLocation]);
@@ -168,7 +179,6 @@ const MapComponent = () => {
     setContextMenu(null);
   }, [dispatch, selectedGeofence]);
 
-
   /**
    * 增删改查弹框操作
    * @param {*} mode
@@ -177,7 +187,6 @@ const MapComponent = () => {
     setHandleModel(mode);
     setVisiblePop(true);
   }, []);
-  
 
   //获取弹框Form组件中的数据
   const getFormDataFromPop = useCallback(
@@ -198,9 +207,8 @@ const MapComponent = () => {
   );
 
   useEffect(() => {
+    console.log("geofences--->", geofences);
 
-    console.log("geofences--->",geofences);
-    
     if (map && geofences.length > 0) {
       Object.values(polygonRefs.current).forEach((polygon) => {
         polygon.setMap(null);
@@ -240,6 +248,16 @@ const MapComponent = () => {
         });
       });
     }
+
+    // 清理函数：在组件卸载时清除地图实例、事件监听器等
+    return () => {
+      if (map) {
+        Object.values(polygonRefs.current).forEach((polygon) => {
+          polygon.setMap(null); // 清除地图上的多边形
+        });
+        polygonRefs.current = {}; // 清空多边形引用
+      }
+    };
   }, [geofences, map, dispatch, handleGeofenceClick]);
 
   useEffect(() => {
@@ -252,11 +270,20 @@ const MapComponent = () => {
         content: markerElement,
         title: "当前位置",
       });
-      return () => marker.setMap(null);
+      // 清理函数：在组件卸载时移除标记
+      return () => {
+        if (marker) {
+          marker.setMap(null); // 移除地图上的用户位置标记
+        }
+      };
     }
   }, [userLocation, map]);
 
-  return (
+  if (loadError) {
+    return <div>地图加载失败...</div>;
+  }
+
+  return isLoaded ? (
     <>
       <div className="map-fence">
         <Space>
@@ -275,29 +302,28 @@ const MapComponent = () => {
         </Space>
       </div>
 
-      <LoadScript googleMapsApiKey={mapKey} libraries={libraries}>
-        {userLocation && (
-          <GoogleMap
-            mapContainerStyle={containerStyle}
-            center={userLocation}
-            zoom={12}
-            onClick={handleMapClick}
-            onLoad={setMap}
-          >
-            {/* 渲染当前正在绘制的多边形 */}
-            {currentPolygon.length > 1 && (
-              <Polyline
-                path={currentPolygon}
-                options={{
-                  strokeColor: geofence.strokeColor || "#2196F3",
-                  strokeOpacity: 0.8,
-                  strokeWeight: 2,
-                }}
-              />
-            )}
-          </GoogleMap>
+      <GoogleMap
+        mapContainerStyle={containerStyle}
+        center={userLocation}
+        zoom={12}
+        onClick={handleMapClick}
+        onLoad={setMap}
+        onUnmount={() => {
+          setMap(null); // 清除地图实例引用
+        }}
+      >
+        {/* 渲染当前正在绘制的多边形 */}
+        {currentPolygon.length > 1 && (
+          <Polyline
+            path={currentPolygon}
+            options={{
+              strokeColor: geofence.strokeColor || "#2196F3",
+              strokeOpacity: 0.8,
+              strokeWeight: 2,
+            }}
+          />
         )}
-      </LoadScript>
+      </GoogleMap>
 
       {/* 添加地理围栏的配置弹窗 */}
       {/* 在配置弹框中 ，填写地理围栏的名称、颜色等信息后，需要通过`dispatch`方法提交到 Redux 中。 */}
@@ -349,6 +375,8 @@ const MapComponent = () => {
         </div>
       )}
     </>
+  ) : (
+    <div>正在加载地图...</div>
   );
 };
 
