@@ -155,6 +155,10 @@ export const getByIdFromDB = async (id, storeName = "geofences") => {
  * @returns {Promise<boolean>}
  */
 export const deleteSingleFromDB = async (id, storeName = "geofences") => {
+  if(!id){
+    message.error("id不能为空")
+    return
+  }
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(storeName, "readwrite");
@@ -210,7 +214,10 @@ export const deleteFromDB = async (ids, storeName = "geofences") => {
 export const editInDB = async (id, updatedData, storeName = "geofences") => {
 console.log("编辑操作DB时------->id",id, )
 console.log("编辑操作DB时------->updatedData",updatedData, )
-  
+  if(!id){
+    message.error("id不能为空")
+    return
+  }
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(storeName, "readwrite");

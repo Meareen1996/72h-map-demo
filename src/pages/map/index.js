@@ -1,9 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import {
-  GoogleMap,
-  Polyline,
-  useJsApiLoader,
-} from "@react-google-maps/api";
+import { GoogleMap, Polyline, useJsApiLoader } from "@react-google-maps/api";
 import { Space, Button, message } from "antd";
 import ConfigPop from "@components/configPop";
 import "./map.scss";
@@ -109,6 +105,7 @@ const MapComponent = () => {
   }, []);
 
   const polygonRefs = useRef({}); // 存储每个 geofence 的 Polygon 实例引用
+  // const polylineRef = useRef(null); //存储画线的实例
   const getUserLocation = useCallback(() => {
     const defaultLocation = { lat: 40.7128, lng: -74.006 };
     const successCallback = (position) => {
@@ -165,14 +162,28 @@ const MapComponent = () => {
     [geofences]
   );
 
+  //判断是否正确选中了图形
+  const isChoosed = useCallback(() => {
+    if (!selectedGeofence) {
+      message.error("没有选中的地理围栏");
+      return;
+    }
+  });
+
   /**
    *
    * @returns 删除操作
    */
   const handleDeleteGeofence = useCallback(() => {
-    if (!selectedGeofence) {
-      message.error("没有选中的地理围栏");
-      return;
+    isChoosed();
+
+    // 删除地图上的 Polygon
+    const polygon = polygonRefs.current[selectedGeofence.id];
+    if (polygon) {
+      window.google.maps.event.clearInstanceListeners(polygon);
+      polygon.setMap(null); // 从地图上移除 Polygon
+      delete polygonRefs.current[selectedGeofence.id]; // 删除引用
+      polygon.setPath([]);
     }
     dispatch(deleteGeofence(selectedGeofence.id));
     setSelectedGeofence(null);
@@ -194,14 +205,15 @@ const MapComponent = () => {
       if (handleModel === "add") {
         setGeofence((prev) => ({ ...prev, ...formData }));
       } else if (handleModel === "edit") {
+        const idObj = { id: selectedGeofence.id };
         if (!selectedGeofence) {
           message.error("没有选中的地理围栏");
           return;
         }
         dispatch(
           editGeofence({
-            id: selectedGeofence.id,
-            newGeofence: { ...formData },
+            ...idObj,
+            newGeofence: { ...idObj, ...formData },
           })
         );
       }
@@ -211,12 +223,8 @@ const MapComponent = () => {
   );
 
   useEffect(() => {
-    console.log("geofences--->", geofences);
-
+    
     if (map && geofences.length > 0) {
-      Object.values(polygonRefs.current).forEach((polygon) => {
-        polygon.setMap(null);
-      });
       polygonRefs.current = {};
       geofences.forEach((geo) => {
         const polygon = new window.google.maps.Polygon({
@@ -229,6 +237,7 @@ const MapComponent = () => {
           editable: true,
           map: map,
         });
+
         polygonRefs.current[geo.id] = polygon;
         polygon.addListener("click", () => handleGeofenceClick(geo.id));
         polygon.addListener("rightclick", (event) =>
@@ -292,16 +301,16 @@ const MapComponent = () => {
       <div className="map-fence">
         <Space>
           <Button type="primary" onClick={() => handleModelType("add")}>
-            添加地理围栏
+            Add geofence
           </Button>
           <Button type="primary" onClick={() => setDrawing(true)}>
-            开始绘制
+            Start to draw
           </Button>
           <Button type="primary" onClick={handleCompleteDrawing}>
-            完成绘制
+            Complete
           </Button>
           <Button danger onClick={handleDeleteGeofence}>
-            删除
+            Delete
           </Button>
         </Space>
       </div>
@@ -319,6 +328,7 @@ const MapComponent = () => {
         {/* 渲染当前正在绘制的多边形 */}
         {currentPolygon.length > 1 && (
           <Polyline
+            // ref={polylineRef}
             path={currentPolygon}
             options={{
               strokeColor: geofence.strokeColor || "#2196F3",
@@ -363,17 +373,17 @@ const MapComponent = () => {
               handleModelType("view");
             }}
           >
-            查看信息
+            View
           </Button>
           <Button
             onClick={() => {
               handleModelType("edit");
             }}
           >
-            编辑
+            Edit
           </Button>
           <Button danger onClick={handleDeleteGeofence}>
-            删除
+            Delete
           </Button>
           <Button onClick={handleCloseMenu}>取消</Button>
         </div>
