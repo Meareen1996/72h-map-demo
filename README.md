@@ -1,70 +1,60 @@
-# Getting Started with Create React App
+## 概述
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+这是一个基于 React 的 Web 应用，使用现代工具和库进行状态管理、路由、UI 组件等。该应用采用 Redux Toolkit 进行状态管理，使用 React Router 进行客户端路由，并通过 Ant Design 提供 UI 组件。项目集成了 `@react-google-maps/api` 用于 Google 地图。通过 ESLint、Stylelint 和 Husky 保证代码质量和一致性。
 
-## Available Scripts
+## 开发步骤
 
-In the project directory, you can run:
+### 1. 克隆项目代码
+首先，使用 Git 将项目代码克隆到本地。你可以使用以下命令将代码拉取下来：
 
-### `npm start`
+```bash
+git clone https://github.com/Meareen1996/72h-map-demo.git
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+进入项目目录：
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+```bash
+cd 72h-map-demo
+```
 
-### `npm test`
+### 2. 安装依赖
+在克隆代码后，确保你已经全局安装了 `node` 和 `pnpm`，然后运行以下命令安装所有依赖：
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```bash
+pnpm install
+```
 
-### `npm run build`
+### 3. 启动本地开发环境
+安装完成后，运行以下命令启动本地开发服务器：
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```bash
+pnpm start
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+此时，项目将运行并在本地开发环境中启动。
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 4. 项目初始化与配置
+- 设置目录结构。
+- 配置 `package.json` 管理依赖和脚本。
 
-### `npm run eject`
+### 5. 安装额外依赖
+- 安装核心依赖如 `react`、`redux`、`react-redux`。
+- 安装 `antd` 作为 UI 组件库，并集成 `@ant-design/icons`。
+- 安装 `@react-google-maps/api` 支持地图功能。
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### 6. 配置开发工具
+- 配置 Babel，支持 React、TypeScript 和现代 JavaScript。
+- 使用 Webpack 处理 JavaScript、CSS、SCSS 文件的打包。
+- 集成 ESLint 和 Stylelint 进行代码质量检查。
+- 配置 Husky 和 `lint-staged` 在提交代码时进行检查。
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### 7. 浏览器兼容性
+- 配置 `browserslist` 以确保项目兼容主流浏览器。
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### 8. 构建与运行
+- 运行 `pnpm build` 生成生产环境的构建文件。
+- 使用 `pnpm start` 启动开发服务器。
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## 结论
 
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+项目配置完善，支持扩展开发并具备高质量代码标准，已准备好进行进一步的开发和部署。
