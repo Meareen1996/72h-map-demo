@@ -4,8 +4,9 @@ import { Space, Button, message } from 'antd';
 import ConfigPop from '@components/configPop';
 import './map.scss';
 import { v4 as uuidv4 } from 'uuid';
-import { useDispatch, useSelector } from 'react-redux';
-import { addGeofence, editGeofence, deleteGeofence, loadGeofences } from '@store/modules/geofenceSlice';  // 从 Redux 中导入相应的 actions
+import { useDispatch } from 'react-redux';
+import { addGeofence, editGeofence, deleteGeofence } from '@store/modules/geofenceSlice';
+import useGeofences from '@hooks/geoHook'; // 根据你的实际文件路径调整  // 从 Redux 中导入相应的 actions
 const containerStyle = {
   width: '100%',
   height: 'calc(100% - 60px)'
@@ -28,18 +29,7 @@ const generateChineseName = () => {
  */
 const MapComponent = () => {
   const dispatch = useDispatch();
-  // 从 Redux 中获取地理围栏数据
-  const { geofences, status } = useSelector(state => state.geofences);
-
-  useEffect(() => {
-    // 页面加载时，从 IndexedDB 加载地理围栏数据
-    if (status === 'idle') {
-      dispatch(loadGeofences());
-    }
-
-  }, [dispatch, status]);
-
-
+  const {geofences}=useGeofences()
   const [map, setMap] = useState(null);
   const [drawing, setDrawing] = useState(false);
   const [currentPolygon, setCurrentPolygon] = useState([]);
