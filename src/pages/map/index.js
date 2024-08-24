@@ -189,10 +189,10 @@ const MapComponent = () => {
         position: userLocation,
         map: map,
         content: markerElement,  // 自定义的标记内容
-        anchor: new window.google.maps.Point(0, -30), // 设置标记的锚点位置
         title: '当前位置', // 鼠标悬停时显示的标题
       });
-
+      
+      
       // 将标记添加到地图上
       marker.setMap(map);
 
