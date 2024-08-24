@@ -208,6 +208,9 @@ export const deleteFromDB = async (ids, storeName = "geofences") => {
 
 //编辑记录
 export const editInDB = async (id, updatedData, storeName = "geofences") => {
+console.log("编辑操作DB时------->id",id, )
+console.log("编辑操作DB时------->updatedData",updatedData, )
+  
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(storeName, "readwrite");

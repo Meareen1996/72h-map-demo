@@ -31,7 +31,7 @@ const AddGeofenceModal = ({ visible, onCreate, onCancel, mode, record }) => {
     name: name || "",
     strokeColor: strokeColor || "",
     fillColor: fillColor || "",
-    paths: paths || "[]",
+    paths: JSON.stringify(paths, null, 2) || "[]", // 将 paths 转换为 JSON 字符串，格式化显示
     createdTime:
       createdTime ||
       new Date().toISOString().replace("T", " ").substring(0, 19),
@@ -39,7 +39,12 @@ const AddGeofenceModal = ({ visible, onCreate, onCancel, mode, record }) => {
   };
 
   const onFinish = (values) => {
-    onCreate(values);
+    // 将 paths 从 JSON 字符串解析为数组
+    const { paths, ...restValues } = values;
+    onCreate({
+      ...restValues,
+      paths: JSON.parse(paths || "[]"),
+    });
     form.resetFields();
     onCancel();
   };
@@ -66,7 +71,6 @@ const AddGeofenceModal = ({ visible, onCreate, onCancel, mode, record }) => {
         <Form.Item
           name="name"
           label="Name"
-          initialValue={initialValues.name}
           rules={[
             {
               required: true,
@@ -79,7 +83,6 @@ const AddGeofenceModal = ({ visible, onCreate, onCancel, mode, record }) => {
         <Form.Item
           name="strokeColor"
           label="Border Color"
-          initialValue={initialValues.strokeColor}
           rules={[{ required: true, message: "Please select a border color!" }]}
         >
           <Select options={colors} disabled={mode === "view"} />
@@ -87,7 +90,6 @@ const AddGeofenceModal = ({ visible, onCreate, onCancel, mode, record }) => {
         <Form.Item
           name="fillColor"
           label="Fill Color"
-          initialValue={initialValues.fillColor}
           rules={[{ required: true, message: "Please select a fill color!" }]}
         >
           <Select options={colors} disabled={mode === "view"} />
@@ -97,22 +99,20 @@ const AddGeofenceModal = ({ visible, onCreate, onCancel, mode, record }) => {
           <>
             <Form.Item
               name="paths"
-              label="Paths"
-              initialValue={initialValues.placeholderaths}
+              label="paths"
               rules={[{ required: true, message: "Please enter the paths!" }]}
             >
               <Input.TextArea
                 placeholder="Enter JSON array of paths"
                 disabled={mode === "view"}
-                autoSize={{ minRows: 3, maxRows: 6 }} // Adjust rows based on content length
-                value={JSON.stringify(initialValues.paths, null, 2)} // Display paths array as formatted JSON
+                autoSize={{ minRows: 3, maxRows: 6 }} 
+                value={initialValues.paths} // 显示 JSON 格式化字符串
               />
             </Form.Item>
 
             <Form.Item
               name="createdTime"
               label="Created Time"
-              initialValue={initialValues.createdTime}
               rules={[
                 { required: true, message: "Please enter the created time!" },
               ]}

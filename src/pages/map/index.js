@@ -194,6 +194,10 @@ const MapComponent = () => {
       if (handleModel === "add") {
         setGeofence((prev) => ({ ...prev, ...formData }));
       } else if (handleModel === "edit") {
+        if (!selectedGeofence) {
+          message.error("没有选中的地理围栏");
+          return;
+        }
         dispatch(
           editGeofence({
             id: selectedGeofence.id,
