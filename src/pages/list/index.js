@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Table, Button, Input, Checkbox, Tooltip } from "antd";
-import { batchDeleteGeofences,editGeofence  } from "@store/modules/geofenceSlice";
+import { Table, Button, Input, Checkbox, Tooltip, Pagination } from "antd";
+import {
+  batchDeleteGeofences,
+  editGeofence,
+} from "@store/modules/geofenceSlice";
 import { pageQuery } from "@utils/indexedDB";
 import useGeofences from "@hooks/geoHook";
-
+import "./index.scss";
 const ListComponent = () => {
   const dispatch = useDispatch();
-  // 从 Redux 中获取地理围栏数据
   const { colors } = useSelector((state) => state.geofences);
   const { geofences } = useGeofences();
   const [searchName, setSearchName] = useState("");
@@ -17,7 +19,6 @@ const ListComponent = () => {
   const [pageSize, setPageSize] = useState(10);
   const [tableData, setTableData] = useState(geofences);
   const [selectedKeys, setSelectedKeys] = useState([]); //选中要删除的项
-
 
   useEffect(() => {
     setTableData(geofences); // 每次 Redux 中数据更新时，更新列表
@@ -43,7 +44,6 @@ const ListComponent = () => {
   }, [page, pageSize, searchName]);
 
   // 列定义
-  // 列定义
   const columns = [
     { title: "Name", dataIndex: "name", key: "name" },
     {
@@ -51,7 +51,8 @@ const ListComponent = () => {
       dataIndex: "strokeColor",
       key: "strokeColor",
       render: (_, record) => {
-        return colors.find((color) => color.value === record.strokeColor)?.label;
+        return colors.find((color) => color.value === record.strokeColor)
+          ?.label;
       },
     },
     {
@@ -93,7 +94,9 @@ const ListComponent = () => {
             // Update indexedDB with new visibility status
             const updatedRecord = { ...record, visible: e.target.checked };
             // Assuming you have a function updateRecordInIndexDB defined somewhere
-            dispatch(editGeofence({ id: record.id, newGeofence: updatedRecord }));
+            dispatch(
+              editGeofence({ id: record.id, newGeofence: updatedRecord })
+            );
           }}
         />
       ),
@@ -101,7 +104,7 @@ const ListComponent = () => {
   ];
 
   return (
-    <>
+    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <Input.Search
         placeholder="Search by geofence name"
         enterButton
@@ -114,42 +117,47 @@ const ListComponent = () => {
         onClick={() => {
           dispatch(batchDeleteGeofences(selectedKeys));
         }}
+        style={{ marginBottom: 10, width: "120px" }}
       >
         Batch Delete
       </Button>
-      <Table
-        columns={columns}
-        dataSource={tableData}
-        rowSelection={{
-          type: "checkbox",
-          onChange: (selectedRowKeys) => {
-            console.log("selectedRowKeys---->", selectedRowKeys);
-            setSelectedKeys(selectedRowKeys)
-          },
-        }}
-        pagination={{
-          current: page,
-          pageSize: pageSize,
-          total: total,
-          onChange: (page, pageSize) => {
+      <div
+        style={{ flex: 1, overflow: "auto", maxHeight: "calc(100vh - 200px)" }}
+      >
+        <Table
+          columns={columns}
+          dataSource={tableData}
+          rowSelection={{
+            type: "checkbox",
+            onChange: (selectedRowKeys) => {
+              console.log("selectedRowKeys---->", selectedRowKeys);
+              setSelectedKeys(selectedRowKeys);
+            },
+          }}
+          pagination={false}
+          rowKey="id"
+          loading={loading}
+          sticky
+        />
+      </div>
+
+      <div
+       
+      >
+        <Pagination
+          current={page}
+          pageSize={pageSize}
+          total={total}
+          onChange={(page, pageSize) => {
             setPage(page);
             setPageSize(pageSize);
-          },
-          showSizeChanger: true, // 确保 showSizeChanger 为布尔值
-          showQuickJumper: true, // 确保 showQuickJumper 为布尔值
-          showTotal: (total) => `Total ${total} items`,
-        }}
-        scroll={{
-          x: 1500,
-        }}
-        rowKey="id"
-        loading={loading}
-        // antd site header height
-        sticky={{
-          offsetHeader: 64,
-        }}
-      />
-    </>
+          }}
+          showSizeChanger
+          showQuickJumper
+          showTotal={(total) => `Total ${total} items`}
+        />
+      </div>
+    </div>
   );
 };
 
