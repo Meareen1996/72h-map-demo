@@ -17,8 +17,9 @@ const containerStyle = {
   height: "calc(100% - 60px)",
 };
 const libraries = ["drawing", "marker"];
-const mapKey = "AIzaSyAyZ4S3bvIDOyrKYR3IGpjl9YmVPVZn_9M"; // 替换为你的实际API密钥
-// const mapKey = 'AIzaSyCYEjZVnDQWY01I6XMdQq5pj8FXsvu2V28'; // 替换为你的实际API密钥
+
+const mapKey = "替换为你实际的key"; // 替换为你的实际API密钥
+
 // 中文姓名生成函数
 const generateChineseName = () => {
   const familyNames = [

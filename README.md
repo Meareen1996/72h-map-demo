@@ -1,7 +1,5 @@
-<<<<<<< HEAD
-# 72h-map-demo
-Geofence Management Web App
-=======
+
+
 ## 概述
 
 这是一个基于 React 的 Web 应用，使用现代工具和库进行状态管理、路由、UI 组件等。该应用采用 Redux Toolkit 进行状态管理，使用 React Router 进行客户端路由，并通过 Ant Design 提供 UI 组件。项目集成了 `@react-google-maps/api` 用于 Google 地图。通过 ESLint、Stylelint 和 Husky 保证代码质量和一致性。
@@ -36,6 +34,15 @@ pnpm start
 ```
 
 此时，项目将运行并在本地开发环境中启动。
+你需要准备好 Google 地图的 API 密钥，并在代码中全局搜索 `mapKey` 替换上你真实的密钥，即可看到地图了。
+
+
+```bash
+pnpm start
+```
+
+此时，项目将运行！
+
 
 ### 4. 项目初始化与配置
 - 设置目录结构。
@@ -59,9 +66,6 @@ pnpm start
 - 运行 `pnpm build` 生成生产环境的构建文件。
 - 使用 `pnpm start` 启动开发服务器。
 
-## 结论
-
-项目配置完善，支持扩展开发并具备高质量代码标准，已准备好进行进一步的开发和部署。
 
 ### 操作步骤整理
 
@@ -107,4 +111,3 @@ pnpm start
 
 - **显示与隐藏控制**
   - 表格的最后一列提供复选框，用于控制地图上围栏的显示或隐藏，选中即展示，未选中则不展示
->>>>>>> dev
