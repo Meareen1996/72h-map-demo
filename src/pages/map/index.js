@@ -1,25 +1,46 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { GoogleMap, LoadScript, Polyline } from '@react-google-maps/api';
-import { Space, Button, message } from 'antd';
-import ConfigPop from '@components/configPop';
-import './map.scss';
-import { v4 as uuidv4 } from 'uuid';
-import { useDispatch } from 'react-redux';
-import { addGeofence, editGeofence, deleteGeofence } from '@store/modules/geofenceSlice';
-import useGeofences from '@hooks/geoHook'; // 根据你的实际文件路径调整  // 从 Redux 中导入相应的 actions
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { GoogleMap, LoadScript, Polyline } from "@react-google-maps/api";
+import { Space, Button, message } from "antd";
+import ConfigPop from "@components/configPop";
+import "./map.scss";
+import { v4 as uuidv4 } from "uuid";
+import { useDispatch } from "react-redux";
+import {
+  addGeofence,
+  editGeofence,
+  deleteGeofence,
+} from "@store/modules/geofenceSlice";
+import useGeofences from "@hooks/geoHook"; // 根据你的实际文件路径调整  // 从 Redux 中导入相应的 actions
+import { compareJsonArrays } from "@utils/toolkit";
 const containerStyle = {
-  width: '100%',
-  height: 'calc(100% - 60px)'
+  width: "100%",
+  height: "calc(100% - 60px)",
 };
-const libraries = ['drawing', 'marker'];
-const mapKey = 'AIzaSyAyZ4S3bvIDOyrKYR3IGpjl9YmVPVZn_9M'; // 替换为你的实际API密钥
+const libraries = ["drawing", "marker"];
+const mapKey = "AIzaSyAyZ4S3bvIDOyrKYR3IGpjl9YmVPVZn_9M"; // 替换为你的实际API密钥
 // const mapKey = 'AIzaSyCYEjZVnDQWY01I6XMdQq5pj8FXsvu2V28'; // 替换为你的实际API密钥
 // 中文姓名生成函数
 const generateChineseName = () => {
-  const familyNames = ['赵', '钱', '孙', '李', '周','xx','yy','a','b','c','d'];
-  const givenNames = ['伟', '芳', '娜', '静', '强', '磊'];
+  const familyNames = [
+    "赵",
+    "钱",
+    "孙",
+    "李",
+    "周",
+    "xx",
+    "yy",
+    "a",
+    "b",
+    "c",
+    "d",
+    "e",
+    "f",
+    "t",
+  ];
+  const givenNames = ["伟", "芳", "娜", "静", "强", "磊", "发", "烦", "和"];
 
-  const familyName = familyNames[Math.floor(Math.random() * familyNames.length)];
+  const familyName =
+    familyNames[Math.floor(Math.random() * familyNames.length)];
   const givenName = givenNames[Math.floor(Math.random() * givenNames.length)];
   return familyName + givenName;
 };
@@ -29,7 +50,7 @@ const generateChineseName = () => {
  */
 const MapComponent = () => {
   const dispatch = useDispatch();
-  const {geofences}=useGeofences()
+  const { geofences } = useGeofences();
   const [map, setMap] = useState(null);
   const [drawing, setDrawing] = useState(false);
   const [currentPolygon, setCurrentPolygon] = useState([]);
@@ -37,147 +58,154 @@ const MapComponent = () => {
   const [selectedGeofence, setSelectedGeofence] = useState(null);
   const [visiblePop, setVisiblePop] = useState(false);
 
-  const [handleModel, setHandleModel] = useState('add'); // 弹窗模式
+  const [handleModel, setHandleModel] = useState("add"); // 弹窗模式
 
   const [geofence, setGeofence] = useState({
     name: generateChineseName(),
     strokeColor: "#289af2",
     fillColor: "#29302c",
-    visible: true
+    visible: true,
   });
 
   // -----右键菜单编辑start------
   const [contextMenu, setContextMenu] = useState(null); // 上下文菜单状态
 
-  // 处理右键点击显示菜单
-  const handlePolygonRightClick = (event, geo) => {
-
-    const polygon = polygonRefs.current[geo.id];  //获取对应的 Polygon 引用
+//  点击右键菜单
+  const handlePolygonRightClick = useCallback((event, geo) => {
+    const polygon = polygonRefs.current[geo.id];
     if (polygon) {
-      const updatedPaths = polygon
-        .getPath()
-        .getArray()
-        .map((latLng) => ({
-          lat: latLng.lat(),
-          lng: latLng.lng(),
-        }));
-
-      // 记录选中的 Polygon
-      setSelectedGeofence({ ...geo, paths: updatedPaths })
-      console.log("selectedGeofence--->", selectedGeofence)
-
+      const updatedPaths = polygon.getPath().getArray().map(latLng => ({
+        lat: latLng.lat(),
+        lng: latLng.lng(),
+      }));
+      setSelectedGeofence({ ...geo, paths: updatedPaths });
       setContextMenu({
-        position: { x: event.domEvent.clientX, y: event.domEvent.clientY }, // 设置菜单的显示位置
+        position: { x: event.domEvent.clientX, y: event.domEvent.clientY },
         visible: true,
       });
-    };
-  }
-  // 隐藏上下文菜单
-  const handleCloseMenu = () => {
-    setContextMenu(null);
-  };
-
+    }
+  }, []);
 
   useEffect(() => {
-    console.log("selectedGeofence----->设置好了吗", selectedGeofence)
-  }, [selectedGeofence])
-  // -----右键菜单编辑end------
+    if (visiblePop) {
+      handleCloseMenu();
+    }
+  }, [visiblePop]);
 
-  const polygonRefs = useRef({});  // 存储每个 geofence 的 Polygon 实例引用
+  // 隐藏上下文菜单
+  const handleCloseMenu = useCallback(() => {
+    setContextMenu(null);
+  }, []);
 
-  // 获取用户位置以便居中地图
-  const getUserLocation = () => {
+  const polygonRefs = useRef({}); // 存储每个 geofence 的 Polygon 实例引用
+  const getUserLocation = useCallback(() => {
     const defaultLocation = { lat: 40.7128, lng: -74.006 };
-
     const successCallback = (position) => {
       const { latitude, longitude } = position.coords;
       setUserLocation({ lat: latitude, lng: longitude });
     };
-
-    const errorCallback = (error) => {
-      console.error('获取用户位置出错:', error);
-      setUserLocation(defaultLocation); // 如果获取地理位置失败，则回退到默认位置
+    const errorCallback = () => {
+      setUserLocation(defaultLocation);
     };
-
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(successCallback, errorCallback);
     } else {
       setUserLocation(defaultLocation);
     }
-  };
-
+  }, []);
+ 
   useEffect(() => {
     getUserLocation();
-  }, []);
-
+  }, [getUserLocation]);
 
   // 处理地图点击绘制事件(---由点到线再到面---)
-  const handleMapClick = (e) => {
-    if (!drawing) return;
-    const newPoint = { lat: e.latLng.lat(), lng: e.latLng.lng() };
-    setCurrentPolygon((prevPolygon) => [...prevPolygon, newPoint]);
-  };
-
+  const handleMapClick = useCallback(
+    (e) => {
+      if (!drawing) return;
+      const newPoint = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+      setCurrentPolygon((prevPolygon) => [...prevPolygon, newPoint]);
+    },
+    [drawing]
+  );
 
   // 完成绘制多边形
-  const handleCompleteDrawing = () => {
-    console.log("currentPolygon--->", currentPolygon)
+  const handleCompleteDrawing = useCallback(() => {
     if (currentPolygon.length < 3) {
       message.error("需要至少三个点来形成多边形。");
       return;
     }
-
     const newGeofence = {
       id: uuidv4(),
-      createdTime: new Date().toISOString().replace('T', ' ').substring(0, 19),
+      createdTime: new Date().toISOString().replace("T", " ").substring(0, 19),
       ...geofence,
       paths: currentPolygon,
     };
-
     dispatch(addGeofence(newGeofence));
     setCurrentPolygon([]);
     setDrawing(false);
-  };
+  }, [currentPolygon, dispatch, geofence]);
 
   // 点击地理围栏(---选中围栏---)
-  const handleGeofenceClick = (geofenceId) => {
-    const selected = geofences.find((geo) => geo.id === geofenceId);
-    console.log("selected---->", selected);
-    setSelectedGeofence(selected);
-  };
+  const handleGeofenceClick = useCallback(
+    (geofenceId) => {
+      const selected = geofences.find((geo) => geo.id === geofenceId);
+      setSelectedGeofence(selected);
+    },
+    [geofences]
+  );
 
   /**
-   * 
+   *
    * @returns 删除操作
    */
-  const handleDeleteGeofence = () => {
-    console.log("selectedGeofence----->", selectedGeofence)
+  const handleDeleteGeofence = useCallback(() => {
     if (!selectedGeofence) {
       message.error("没有选中的地理围栏");
       return;
     }
-    // 派发 Redux 动作，删除地理围栏
     dispatch(deleteGeofence(selectedGeofence.id));
-
-    // 清空当前选中的地理围栏
     setSelectedGeofence(null);
-  };
+    setContextMenu(null);
+  }, [dispatch, selectedGeofence]);
 
-  // useEffect 监控 geofences 变化
+
+  /**
+   * 增删改查弹框操作
+   * @param {*} mode
+   */
+  const handleModelType = useCallback((mode) => {
+    setHandleModel(mode);
+    setVisiblePop(true);
+  }, []);
+  
+
+  //获取弹框Form组件中的数据
+  const getFormDataFromPop = useCallback(
+    (formData) => {
+      if (handleModel === "add") {
+        setGeofence((prev) => ({ ...prev, ...formData }));
+      } else if (handleModel === "edit") {
+        dispatch(
+          editGeofence({
+            id: selectedGeofence.id,
+            newGeofence: { ...formData },
+          })
+        );
+      }
+      setVisiblePop(false);
+    },
+    [dispatch, handleModel, selectedGeofence]
+  );
+
   useEffect(() => {
 
-    console.log("geofences---->", geofences)
-    console.log("map---->", map)
+    console.log("geofences--->",geofences);
+    
     if (map && geofences.length > 0) {
-      // Clear existing polygons from the map
-      Object.values(polygonRefs.current).forEach(polygon => {
+      Object.values(polygonRefs.current).forEach((polygon) => {
         polygon.setMap(null);
       });
-
-      // 清理旧的 Polygon 引用
       polygonRefs.current = {};
-
-      // 添加新的 Polygon 引用
       geofences.forEach((geo) => {
         const polygon = new window.google.maps.Polygon({
           paths: geo.paths,
@@ -186,102 +214,64 @@ const MapComponent = () => {
           visible: geo.visible,
           fillOpacity: 0.8,
           strokeWeight: 2,
-          editable: true, // 启用编辑
+          editable: true,
           map: map,
         });
-        console.log("测试有没有polygon实例---", polygon)
-        // polygonRefs.current[geo.id] = polygon;
-        polygonOnLoad(polygon, geo)
-
+        polygonRefs.current[geo.id] = polygon;
+        polygon.addListener("click", () => handleGeofenceClick(geo.id));
+        polygon.addListener("rightclick", (event) =>
+          handlePolygonRightClick(event, geo)
+        );
+        polygon.addListener("mouseup", () => {
+          const updatedPaths = polygon
+            .getPath()
+            .getArray()
+            .map((latLng) => ({
+              lat: latLng.lat(),
+              lng: latLng.lng(),
+            }));
+          if (compareJsonArrays(geo.paths, updatedPaths)) return;
+          dispatch(
+            editGeofence({
+              id: geo.id,
+              newGeofence: { ...geo, paths: updatedPaths },
+            })
+          );
+        });
       });
     }
-    // 销毁地图实例，避免内存泄漏
-    // return () => {
-    // };
-  }, [geofences, map]);
+  }, [geofences, map, dispatch, handleGeofenceClick]);
 
-  //标记点
   useEffect(() => {
-    console.log("User Location:", userLocation);
     if (userLocation && map) {
-      console.log("Map loaded:", map);
-      // 创建自定义标记的 DOM 元素
-      const markerElement = document.createElement('div');
+      const markerElement = document.createElement("div");
       markerElement.innerHTML = `<div style="color: blue; font-size: 16px;">您在这里</div>`;
-
-      // 创建 AdvancedMarkerElement
       const marker = new window.google.maps.marker.AdvancedMarkerElement({
         position: userLocation,
         map: map,
-        content: markerElement,  // 自定义的标记内容
-        title: '当前位置', // 鼠标悬停时显示的标题
+        content: markerElement,
+        title: "当前位置",
       });
-
-
-      // 将标记添加到地图上
-      marker.setMap(map);
-
-      // 清理：当组件卸载时，移除标记
-      return () => {
-        marker.setMap(null);
-      };
+      return () => marker.setMap(null);
     }
   }, [userLocation, map]);
 
-  //注册围栏事件
-  const polygonOnLoad = (polygon, geo) => {
-    console.log(`Polygon loaded for geo id: ${geo.id}`);
-    polygonRefs.current[geo.id] = polygon;
-    polygon.addListener('click', () => handleGeofenceClick(geo.id));
-    // polygon.addListener('mouseup', () => handleGeofenceEdit(geo.id));
-    polygon.addListener('rightclick', (event) => handlePolygonRightClick(event, geo));
-    console.log(`Event listeners added for geo id: ${geo.id}`);
-    polygon.addListener('mouseup', () => {
-      const polygon = polygonRefs.current[geo.id];  //获取对应的 Polygon 引用
-      //   console.log("编辑后的---->", polygon)
-      if (polygon) {
-        const updatedPaths = polygon
-          .getPath()
-          .getArray()
-          .map((latLng) => ({
-            lat: latLng.lat(),
-            lng: latLng.lng(),
-          }));
-        dispatch(editGeofence({ id: geo.id, newGeofence: { ...geo, paths: updatedPaths } }));
-      }
-    });
-  }
-  /**
-   * 增删改查弹框操作
-   * @param {*} mode 
-   */
-  const handleModelType = (mode) => {
-    setHandleModel(mode);
-    setVisiblePop(true);
-  }
-
-  //获取弹框Form组件中的数据
-  const getFormDataFromPop = (formData) => {
-    if (handleModel === 'add') {
-      setGeofence(...geofence, formData);
-    } else if (handleModel === 'edit') {
-      console.log("打印编辑完的数据---->", selectedGeofence.id, formData)
-      dispatch(editGeofence({ id: selectedGeofence.id, newGeofence: { ...formData } }));
-
-    } else if (handleModel === 'view') {
-      setVisiblePop(false)
-    }
-    setVisiblePop(false);
-  }
-
   return (
     <>
-      <div className='map-fence'>
+      <div className="map-fence">
         <Space>
-          <Button type="primary" onClick={() => handleModelType('add')}>添加地理围栏</Button>
-          <Button type="primary" onClick={() => setDrawing(true)}>开始绘制</Button>
-          <Button type="primary" onClick={handleCompleteDrawing}>完成绘制</Button>
-          <Button danger onClick={handleDeleteGeofence}>删除</Button>
+          <Button type="primary" onClick={() => handleModelType("add")}>
+            添加地理围栏
+          </Button>
+          <Button type="primary" onClick={() => setDrawing(true)}>
+            开始绘制
+          </Button>
+          <Button type="primary" onClick={handleCompleteDrawing}>
+            完成绘制
+          </Button>
+          <Button danger onClick={handleDeleteGeofence}>
+            删除
+          </Button>
         </Space>
       </div>
 
@@ -290,7 +280,7 @@ const MapComponent = () => {
           <GoogleMap
             mapContainerStyle={containerStyle}
             center={userLocation}
-            zoom={10}
+            zoom={12}
             onClick={handleMapClick}
             onLoad={setMap}
           >
@@ -317,7 +307,7 @@ const MapComponent = () => {
         record={selectedGeofence}
         onCancel={() => setVisiblePop(false)}
         onCreate={(formData) => {
-          getFormDataFromPop(formData)
+          getFormDataFromPop(formData);
         }}
       />
       {/* 上述逻辑会更新 geofence 对象，
@@ -332,21 +322,32 @@ const MapComponent = () => {
             backgroundColor: "#fff",
             padding: "10px",
             boxShadow: "0px 0px 5px rgba(0,0,0,0.3)",
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '10px',
-            borderRadius: '5px',
-
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+            borderRadius: "5px",
           }}
         >
-          <Button onClick={() => { handleModelType('view') }}>查看信息</Button>
-          <Button onClick={() => { handleModelType('edit') }}>编辑</Button>
-          <Button danger onClick={handleDeleteGeofence}>删除</Button>
+          <Button
+            onClick={() => {
+              handleModelType("view");
+            }}
+          >
+            查看信息
+          </Button>
+          <Button
+            onClick={() => {
+              handleModelType("edit");
+            }}
+          >
+            编辑
+          </Button>
+          <Button danger onClick={handleDeleteGeofence}>
+            删除
+          </Button>
           <Button onClick={handleCloseMenu}>取消</Button>
         </div>
       )}
-
-
     </>
   );
 };

@@ -1,6 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Table, Button, Input, Checkbox, Tooltip, Pagination } from "antd";
+import {
+  Table,
+  Button,
+  Input,
+  Checkbox,
+  Tooltip,
+  Pagination,
+  Modal,
+} from "antd";
 import {
   batchDeleteGeofences,
   editGeofence,
@@ -8,6 +16,8 @@ import {
 import { pageQuery } from "@utils/indexedDB";
 import useGeofences from "@hooks/geoHook";
 import "./index.scss";
+import debounce from "lodash/debounce";
+
 const ListComponent = () => {
   const dispatch = useDispatch();
   const { colors } = useSelector((state) => state.geofences);
@@ -19,6 +29,12 @@ const ListComponent = () => {
   const [pageSize, setPageSize] = useState(10);
   const [tableData, setTableData] = useState(geofences);
   const [selectedKeys, setSelectedKeys] = useState([]); //选中要删除的项
+  const [deleting, setDeleting] = useState(false);
+
+  const debounceSearch= useCallback(
+    debounce((value) => setSearchName(value), 500),
+    []
+  );
 
   useEffect(() => {
     setTableData(geofences); // 每次 Redux 中数据更新时，更新列表
@@ -26,83 +42,105 @@ const ListComponent = () => {
   }, [geofences]);
 
   //分页查询数据
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const data = await pageQuery(page, pageSize, searchName);
-      console.log("查询所有的数据----->表格", data);
       setTableData(data);
     } catch (error) {
       console.error("Error fetching geofences:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, pageSize, searchName]);
 
   useEffect(() => {
     fetchData();
-  }, [page, pageSize, searchName]);
+  }, [page, pageSize, searchName, fetchData]);
 
   // 列定义
-  const columns = [
-    { title: "Name", dataIndex: "name", key: "name" },
-    {
-      title: "Border Color",
-      dataIndex: "strokeColor",
-      key: "strokeColor",
-      render: (_, record) => {
-        return colors.find((color) => color.value === record.strokeColor)
-          ?.label;
+  const columns = useMemo(
+    () => [
+      { title: "Name", dataIndex: "name", key: "name" },
+      {
+        title: "Border Color",
+        dataIndex: "strokeColor",
+        key: "strokeColor",
+        render: (_, record) => {
+          return colors.find((color) => color.value === record.strokeColor)
+            ?.label;
+        },
       },
-    },
-    {
-      title: "Fill Color",
-      dataIndex: "fillColor",
-      key: "fillColor",
-      render: (_, record) => {
-        return colors.find((color) => color.value === record.fillColor)?.label;
+      {
+        title: "Fill Color",
+        dataIndex: "fillColor",
+        key: "fillColor",
+        render: (_, record) => {
+          return colors.find((color) => color.value === record.fillColor)
+            ?.label;
+        },
       },
-    },
-    { title: "Created Time", dataIndex: "createdTime", key: "dateAdded" },
-    {
-      title: "Coordinates",
-      dataIndex: "paths",
-      key: "paths",
-      width: 400,
-      render: (paths) => (
-        <Tooltip title={JSON.stringify(paths)}>
-          <div
-            style={{
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              maxWidth: "200px",
+      { title: "Created Time", dataIndex: "createdTime", key: "createdTime" },
+      {
+        title: "Coordinates",
+        dataIndex: "paths",
+        key: "paths",
+        width: 400,
+        render: (paths) => (
+          <Tooltip title={JSON.stringify(paths)}>
+            <div
+              style={{
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                maxWidth: "200px",
+              }}
+            >
+              {JSON.stringify(paths)}
+            </div>
+          </Tooltip>
+        ),
+      },
+      {
+        title: "Visible",
+        key: "visible",
+        render: (_, record) => (
+          <Checkbox
+            checked={record.visible}
+            onChange={(e) => {
+              const updatedRecord = { ...record, visible: e.target.checked };
+              dispatch(
+                editGeofence({ id: record.id, newGeofence: updatedRecord })
+              );
             }}
-          >
-            {JSON.stringify(paths)}
-          </div>
-        </Tooltip>
-      ),
-    },
-    {
-      title: "Visible",
-      key: "visible",
-      render: (_, record) => (
-        <Checkbox
-          checked={record.visible}
-          onChange={(e) => {
-            // Update indexedDB with new visibility status
-            const updatedRecord = { ...record, visible: e.target.checked };
-            // Assuming you have a function updateRecordInIndexDB defined somewhere
-            dispatch(
-              editGeofence({ id: record.id, newGeofence: updatedRecord })
-            );
-          }}
-        />
-      ),
-    },
-  ];
+          />
+        ),
+      },
+    ],
+    [colors, dispatch]
+  );
 
+  const handleBatchDelete = useCallback(() => {
+    if (selectedKeys.length === 0) return;
+    Modal.confirm({
+      title: "Confirm Batch Delete",
+      content: `Are you sure you want to delete ${selectedKeys.length} geofence(s)?`,
+      okText: "Yes",
+      cancelText: "No",
+      onOk: async () => {
+        setDeleting(true);
+        try {
+          await dispatch(batchDeleteGeofences(selectedKeys));
+          setSelectedKeys([]);
+        } catch (error) {
+          console.error("Error deleting geofences:", error);
+        } finally {
+          setDeleting(false);
+        }
+      },
+    });
+  }, [selectedKeys, dispatch]);
+  
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <Input.Search
@@ -111,12 +149,13 @@ const ListComponent = () => {
         value={searchName}
         onChange={(e) => setSearchName(e.target.value)}
         style={{ marginBottom: 20 }}
+        onSearch={debounceSearch}
+        allowClear
       />
       <Button
         type="primary"
-        onClick={() => {
-          dispatch(batchDeleteGeofences(selectedKeys));
-        }}
+        loading={deleting}
+        onClick={handleBatchDelete}
         style={{ marginBottom: 10, width: "120px" }}
       >
         Batch Delete
@@ -141,9 +180,7 @@ const ListComponent = () => {
         />
       </div>
 
-      <div
-       
-      >
+      <div>
         <Pagination
           current={page}
           pageSize={pageSize}
