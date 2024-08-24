@@ -14,7 +14,9 @@ const colors = [
     { value: '#808080', label: '灰色' },
     { value: '#A52A2A', label: '棕色' },
     { value: '#000000', label: '黑色' },
-    { value: '#FFFFFF', label: '白色' }
+    { value: '#FFFFFF', label: '白色' },
+    { value: '#289af2', label: '默认边框色' },
+    { value: '#29302c', label: '默认填充色' }
 ]
 const titleName = {
     add: "Add Geofence",
@@ -26,6 +28,7 @@ const titleBtnName = {
     edit: "Save",
     view: "Close"
 }
+
 
 const AddGeofenceModal = ({ visible, onCreate, onCancel, mode, record }) => {
     const [form] = Form.useForm();
@@ -69,6 +72,7 @@ const AddGeofenceModal = ({ visible, onCreate, onCancel, mode, record }) => {
                 <Form.Item
                     name="name"
                     label="Name"
+                    initialValue={initialValues.name}
                     rules={[{ required: true, message: 'Please enter the name of the geofence!' }]}
                 >
                     <Input disabled={mode === 'view'} />
@@ -76,6 +80,7 @@ const AddGeofenceModal = ({ visible, onCreate, onCancel, mode, record }) => {
                 <Form.Item
                     name="strokeColor"
                     label="Border Color"
+                    initialValue={initialValues.strokeColor}
                     rules={[{ required: true, message: 'Please select a border color!' }]}
                 >
                     <Select
@@ -87,6 +92,7 @@ const AddGeofenceModal = ({ visible, onCreate, onCancel, mode, record }) => {
                 <Form.Item
                     name="fillColor"
                     label="Fill Color"
+                    initialValue={initialValues.fillColor}
                     rules={[{ required: true, message: 'Please select a fill color!' }]}
                 >
                     <Select
@@ -100,9 +106,15 @@ const AddGeofenceModal = ({ visible, onCreate, onCancel, mode, record }) => {
                         <Form.Item
                             name="paths"
                             label="Paths"
+                            initialValue={initialValues.placeholderaths}
                             rules={[{ required: true, message: 'Please enter the paths!' }]}
                         >
-                            <Input.TextArea placeholder="Enter JSON array of paths" disabled={mode === 'view'} />
+                            <Input.TextArea
+                                placeholder="Enter JSON array of paths"
+                                disabled={mode === 'view'}
+                                autoSize={{ minRows: 3, maxRows: 6 }} // Adjust rows based on content length
+                                value={JSON.stringify(initialValues.paths, null, 2)} // Display paths array as formatted JSON
+                            />
                         </Form.Item>
 
                         <Form.Item
@@ -138,7 +150,7 @@ AddGeofenceModal.propTypes = {
         name: PropTypes.string,
         strokeColor: PropTypes.string,
         fillColor: PropTypes.string,
-        paths: PropTypes.string,
+        paths: PropTypes.array,
         createdTime: PropTypes.string,
         visible: PropTypes.bool,
     }),

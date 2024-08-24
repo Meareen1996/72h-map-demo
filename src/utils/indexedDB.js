@@ -1,3 +1,4 @@
+import { message } from "antd";
 
 /**
    * 打开一个数据库：一般在整个应用【或者页面】初始化阶段调用，并全局共享
@@ -79,7 +80,7 @@ export const addToDB = async (data, storeName = 'geofences') => {
     };
 
     tx.oncomplete = () => {
-      console.log('Transaction completed');
+      message.success("新增成功");
     };
 
     tx.onerror = (event) => {
@@ -135,7 +136,7 @@ export const getByIdFromDB = async (id, storeName = 'geofences') => {
     };
 
     tx.oncomplete = () => {
-      console.log('Transaction completed');
+      message.success("查找成功")
     };
 
     tx.onerror = (event) => {
@@ -169,7 +170,7 @@ export const deleteSingleFromDB = async (id, storeName = 'geofences') => {
     };
 
     tx.oncomplete = () => {
-      console.log('Transaction completed');
+      message.success("删除成功")
     };
 
     tx.onerror = (event) => {
@@ -179,7 +180,7 @@ export const deleteSingleFromDB = async (id, storeName = 'geofences') => {
 };
 
 //删除记录(批量删除)
-export const deleteFromDB = async (ids,storeName = 'geofences') => {
+export const deleteFromDB = async (ids, storeName = 'geofences') => {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(storeName, 'readwrite');
@@ -204,7 +205,7 @@ export const deleteFromDB = async (ids,storeName = 'geofences') => {
 };
 
 //编辑记录
-export const editInDB = async (id, updatedData,storeName = 'geofences') => {
+export const editInDB = async (id, updatedData, storeName = 'geofences') => {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(storeName, 'readwrite');
@@ -221,7 +222,7 @@ export const editInDB = async (id, updatedData,storeName = 'geofences') => {
     };
 
     tx.oncomplete = () => {
-      console.log('Transaction completed');
+      message.success("编辑成功")
     };
 
     tx.onerror = (event) => {
@@ -269,7 +270,7 @@ export const updateVisibleInDB = async (updates, storeName = 'geofences') => {
  * @param searchName 查询的名字关键字
  * @returns {Promise<Array>}
  */
-export const pageQuery = async (page, pageSize, searchName,storeName = 'geofences') => {
+export const pageQuery = async (page, pageSize, searchName, storeName = 'geofences') => {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(storeName, 'readonly');

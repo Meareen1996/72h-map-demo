@@ -23,8 +23,7 @@ const geofenceSlice = createSlice({
   reducers: {
     // 新增单个
     addGeofence: (state, action) => {
-      console.log("state--->", state)
-      // debugger
+      console.log("state.geofences--->", state.geofences)
       state.geofences.push(action.payload);  // 添加新的地理围栏
       try {
         addToDB(action.payload);             // 同步添加到 IndexedDB
@@ -51,18 +50,21 @@ const geofenceSlice = createSlice({
     deleteGeofence: (state, action) => {
       const id = action.payload;
       console.log("要删除的id--->", id);
-
-      
+      console.log("state.geofences---->", state.geofences)
       const index = state.geofences.findIndex(geofence => geofence.id === id);
+
       if (index !== -1) {
+
         state.geofences.splice(index, 1); // 从状态中删除指定ID的地理围栏
         try {
+
           deleteSingleFromDB(id); // 同步从 IndexedDB 删除地理围栏
         } catch (error) {
           console.error("删除地理围栏时出错：", error);
         }
       }
     },
+
     // 批量删除
     batchDeleteGeofences: (state, action) => {
       const ids = action.payload;
@@ -93,7 +95,9 @@ const geofenceSlice = createSlice({
       }
     }
   },
-  
+  // 添加了一个 loadGeofences 的 extraReducers case，
+  // 这样当 loadGeofences action 被触发时（例如，在应用启动时），
+  // 它将调用 getAllFromDB 从 IndexedDB 中加载数据，并更新 Redux 状态中的 geofences。
   extraReducers: (builder) => {
     builder
       .addCase(loadGeofences.pending, (state) => {
