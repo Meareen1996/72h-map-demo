@@ -16,7 +16,7 @@ const mapKey = 'AIzaSyAyZ4S3bvIDOyrKYR3IGpjl9YmVPVZn_9M'; // 替换为你的实�
 // const mapKey = 'AIzaSyCYEjZVnDQWY01I6XMdQq5pj8FXsvu2V28'; // 替换为你的实际API密钥
 // 中文姓名生成函数
 const generateChineseName = () => {
-  const familyNames = ['赵', '钱', '孙', '李', '周'];
+  const familyNames = ['赵', '钱', '孙', '李', '周','xx','yy','a','b','c','d'];
   const givenNames = ['伟', '芳', '娜', '静', '强', '磊'];
 
   const familyName = familyNames[Math.floor(Math.random() * familyNames.length)];
@@ -197,9 +197,6 @@ const MapComponent = () => {
     }
     // 销毁地图实例，避免内存泄漏
     // return () => {
-    //   if (map.current) {
-    //     map.current.destroy();
-    //   }
     // };
   }, [geofences, map]);
 

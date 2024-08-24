@@ -5,7 +5,6 @@ import {
   deleteFromDB,
   getAllFromDB,
   deleteSingleFromDB,
-  updateVisibleInDB,
   getByIdFromDB,
 } from "@utils/indexedDB"; // 假设你有这些 IndexedDB 工具函数
 import { createAsyncThunk } from "@reduxjs/toolkit";
@@ -104,30 +103,7 @@ const geofenceSlice = createSlice({
       } catch (error) {
         console.error("批量删除地理围栏时出错：", error);
       }
-    },
-
-    // 批量更新围栏可见与不可见
-    setGeofenceVisibility: (state, action) => {
-      const { geofences } = action.payload;
-      const updatedGeofences = geofences
-        .map((geofence) => {
-          const index = state.geofences.findIndex(
-            (item) => item.id === geofence.id
-          );
-          if (index !== -1) {
-            state.geofences[index].isVisible = geofence.visible; // 设置地理围栏的可见性
-            return geofence; // 返回更新后的地理围栏对象
-          }
-          return null; // 如果没有找到匹配的地理围栏，返回null
-        })
-        .filter((item) => item !== null); // 过滤掉null值，只保留更新后的地理围栏对象
-
-      try {
-        updateVisibleInDB(updatedGeofences); // 使用更新后的数组同步更新到 IndexedDB
-      } catch (error) {
-        console.error("批量更新地理围栏可见性时出错：", error);
-      }
-    },
+    }
   },
 
   // 添加了一个 loadGeofences 的 extraReducers case，
@@ -147,22 +123,22 @@ const geofenceSlice = createSlice({
         state.status = "failed";
         state.error = action.error.message;
       })
-      .addCase(setGeofenceVisibility, (state, action) => {
-        const { geofences } = action.payload;
-        geofences.forEach((geofence) => {
-          const index = state.geofences.findIndex(
-            (item) => item.id === geofence.id
-          );
-          if (index !== -1) {
-            state.geofences[index].isVisible = geofence.visible; // 设置地理围栏的可见性
-            try {
-              updateVisibleInDB(geofence.id, geofence.visible); // 同步更新到 IndexedDB
-            } catch (error) {
-              console.error("设置地理围栏可见性时出错：", error);
-            }
-          }
-        });
-      });
+      // .addCase(setGeofenceVisibility, (state, action) => {
+      //   const { geofences } = action.payload;
+      //   geofences.forEach((geofence) => {
+      //     const index = state.geofences.findIndex(
+      //       (item) => item.id === geofence.id
+      //     );
+      //     if (index !== -1) {
+      //       state.geofences[index].isVisible = geofence.visible; // 设置地理围栏的可见性
+      //       try {
+      //         updateVisibleInDB(geofence.id, geofence.visible); // 同步更新到 IndexedDB
+      //       } catch (error) {
+      //         console.error("设置地理围栏可见性时出错：", error);
+      //       }
+      //     }
+      //   });
+      // });
   },
 });
 
@@ -171,7 +147,7 @@ export const {
   editGeofence,
   deleteGeofence,
   batchDeleteGeofences,
-  setGeofenceVisibility,
+  // setGeofenceVisibility,
 } = geofenceSlice.actions;
 
 export default geofenceSlice.reducer;

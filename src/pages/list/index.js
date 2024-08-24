@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Table, Button, Input, Checkbox, Tooltip } from "antd";
-import { deleteGeofence } from "@store/modules/geofenceSlice";
+import { batchDeleteGeofences,editGeofence  } from "@store/modules/geofenceSlice";
 import { pageQuery } from "@utils/indexedDB";
 import useGeofences from "@hooks/geoHook";
 
@@ -10,19 +10,18 @@ const ListComponent = () => {
   // 从 Redux 中获取地理围栏数据
   const { colors } = useSelector((state) => state.geofences);
   const { geofences } = useGeofences();
-  // const [filteredGeofences, setFilteredGeofences] = useState(geofences);
   const [searchName, setSearchName] = useState("");
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [tableData, setTableData] = useState(geofences);
+  const [selectedKeys, setSelectedKeys] = useState([]); //选中要删除的项
+
 
   useEffect(() => {
     setTableData(geofences); // 每次 Redux 中数据更新时，更新列表
     setTotal(geofences.length);
-
-    console.log("geofences.length--->", geofences);
   }, [geofences]);
 
   //分页查询数据
@@ -30,7 +29,6 @@ const ListComponent = () => {
     setLoading(true);
     try {
       const data = await pageQuery(page, pageSize, searchName);
-
       console.log("查询所有的数据----->表格", data);
       setTableData(data);
     } catch (error) {
@@ -40,43 +38,11 @@ const ListComponent = () => {
     }
   };
 
-  // //查询总条数
-  // const fetchTotal=async ()=>{
-  //   try {
-  //     const total = await countRecords();
-  //     console.log("查询总条数----->表格", total)
-  //     setTotal(total)
-  //   } catch (error) {
-  //     console.error('Error fetching geofences:', error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // }
-
-  // // 搜索过滤功能
-  // const handleSearch = (value) => {
-  //   setsearchName(value);
-  //   const filtered = geofences.filter((geofence) =>
-  //     geofence.name.toLowerCase().includes(value.toLowerCase())
-  //   );
-  //   setFilteredGeofences(filtered);
-  // };
   useEffect(() => {
     fetchData();
-    // fetchTotal()
   }, [page, pageSize, searchName]);
 
-  // 批量删除
-  const handleDelete = (ids) => {
-    ids.forEach((id) => {
-      dispatch(deleteGeofence(id));
-    });
-  };
-
-  useEffect(() => {
-    console.log("total---->", total);
-  }, [total]);
-
+  // 列定义
   // 列定义
   const columns = [
     { title: "Name", dataIndex: "name", key: "name" },
@@ -85,8 +51,7 @@ const ListComponent = () => {
       dataIndex: "strokeColor",
       key: "strokeColor",
       render: (_, record) => {
-        return colors.find((color) => color.value === record.strokeColor)
-          ?.label;
+        return colors.find((color) => color.value === record.strokeColor)?.label;
       },
     },
     {
@@ -102,7 +67,7 @@ const ListComponent = () => {
       title: "Coordinates",
       dataIndex: "paths",
       key: "paths",
-      width: 400, // 设置列的宽度
+      width: 400,
       render: (paths) => (
         <Tooltip title={JSON.stringify(paths)}>
           <div
@@ -110,7 +75,7 @@ const ListComponent = () => {
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
-              maxWidth: "200px", // 限制单元格的最大宽度
+              maxWidth: "200px",
             }}
           >
             {JSON.stringify(paths)}
@@ -121,13 +86,16 @@ const ListComponent = () => {
     {
       title: "Visible",
       key: "visible",
-      render: (_, record) => <Checkbox checked={record.visible} />,
-    },
-    {
-      title: "Action",
-      key: "action",
       render: (_, record) => (
-        <Button onClick={() => handleDelete([record.id])}>Delete</Button>
+        <Checkbox
+          checked={record.visible}
+          onChange={(e) => {
+            // Update indexedDB with new visibility status
+            const updatedRecord = { ...record, visible: e.target.checked };
+            // Assuming you have a function updateRecordInIndexDB defined somewhere
+            dispatch(editGeofence({ id: record.id, newGeofence: updatedRecord }));
+          }}
+        />
       ),
     },
   ];
@@ -141,10 +109,24 @@ const ListComponent = () => {
         onChange={(e) => setSearchName(e.target.value)}
         style={{ marginBottom: 20 }}
       />
-
+      <Button
+        type="primary"
+        onClick={() => {
+          dispatch(batchDeleteGeofences(selectedKeys));
+        }}
+      >
+        Batch Delete
+      </Button>
       <Table
         columns={columns}
         dataSource={tableData}
+        rowSelection={{
+          type: "checkbox",
+          onChange: (selectedRowKeys) => {
+            console.log("selectedRowKeys---->", selectedRowKeys);
+            setSelectedKeys(selectedRowKeys)
+          },
+        }}
         pagination={{
           current: page,
           pageSize: pageSize,

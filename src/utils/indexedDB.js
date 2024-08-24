@@ -197,6 +197,7 @@ export const deleteFromDB = async (ids, storeName = "geofences") => {
 
     tx.oncomplete = () => {
       resolve(true);
+      message.success("数据已删除")
     };
 
     tx.onerror = (event) => {
@@ -224,35 +225,6 @@ export const editInDB = async (id, updatedData, storeName = "geofences") => {
 
     tx.oncomplete = () => {
       message.success("编辑成功");
-    };
-
-    tx.onerror = (event) => {
-      reject("Transaction failed: " + event.target.errorCode);
-    };
-  });
-};
-
-/**
- * 批量更新记录中的visible字段
- *
- * @param updates 更新对象数组，格式为[{id:xxx, visible: true/false}]
- * @returns {Promise<void>}
- */
-export const updateVisibleInDB = async (updates, storeName = "geofences") => {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(storeName, "readwrite");
-    const store = tx.objectStore(storeName);
-
-    updates.forEach((update) => {
-      const request = store.put({ ...update });
-      request.onerror = (event) => {
-        reject("Update failed: " + event.target.errorCode);
-      };
-    });
-
-    tx.oncomplete = () => {
-      resolve();
     };
 
     tx.onerror = (event) => {
