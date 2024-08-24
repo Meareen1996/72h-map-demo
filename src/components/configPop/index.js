@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
-import { Modal, Form, Input, Select, Button } from 'antd'; // 假设您在项目中使用了 Ant Design
-
-const { Option } = Select;
+import React from 'react';
+import { Modal, Form, Input, Select, Checkbox } from 'antd'; // 假设您在项目中使用了 Ant Design
+import PropTypes from 'prop-types'; // 引入 PropTypes 库
 
 const colors = [
     { value: '#FF0000', label: '红色' },
@@ -17,20 +16,41 @@ const colors = [
     { value: '#000000', label: '黑色' },
     { value: '#FFFFFF', label: '白色' }
 ]
+const titleName = {
+    add: "Add Geofence",
+    edit: "Edit Geofence",
+    view: "View Geofence"
+}
+const titleBtnName = {
+    add: "Add",
+    edit: "Save",
+    view: "Close"
+}
 
-const AddGeofenceModal = ({ visible, onCreate, onCancel }) => {
+const AddGeofenceModal = ({ visible, onCreate, onCancel, mode, record }) => {
     const [form] = Form.useForm();
+    const { name, strokeColor, fillColor, paths, createdTime, visible: isVisible } = record || {};
+
+    const initialValues = {
+        name: name || '',
+        strokeColor: strokeColor || '',
+        fillColor: fillColor || '',
+        paths: paths || '[]',
+        createdTime: createdTime || new Date().toISOString().replace('T', ' ').substring(0, 19),
+        visible: isVisible || true,
+    };
 
     const onFinish = (values) => {
         onCreate(values);
         form.resetFields();
+        onCancel();
     };
 
     return (
         <Modal
             open={visible}
-            title="Add Geofence"
-            okText="Add"
+            title={titleName[mode]}
+            okText={titleBtnName[mode]}
             cancelText="Cancel"
             onCancel={onCancel}
             onOk={() => {
@@ -44,13 +64,14 @@ const AddGeofenceModal = ({ visible, onCreate, onCancel }) => {
                 form={form}
                 layout="vertical"
                 name="geofence_form"
+                initialValues={initialValues}
             >
                 <Form.Item
                     name="name"
                     label="Name"
                     rules={[{ required: true, message: 'Please enter the name of the geofence!' }]}
                 >
-                    <Input />
+                    <Input disabled={mode === 'view'} />
                 </Form.Item>
                 <Form.Item
                     name="strokeColor"
@@ -58,8 +79,8 @@ const AddGeofenceModal = ({ visible, onCreate, onCancel }) => {
                     rules={[{ required: true, message: 'Please select a border color!' }]}
                 >
                     <Select
-                        defaultValue="#0000FF"
                         options={colors}
+                        disabled={mode === 'view'}
                     />
 
                 </Form.Item>
@@ -69,14 +90,57 @@ const AddGeofenceModal = ({ visible, onCreate, onCancel }) => {
                     rules={[{ required: true, message: 'Please select a fill color!' }]}
                 >
                     <Select
-                        defaultValue="#0000FF"
                         options={colors}
+                        disabled={mode === 'view'}
                     />
                 </Form.Item>
+
+                {(mode === 'edit' || mode === 'view') && (
+                    <>
+                        <Form.Item
+                            name="paths"
+                            label="Paths"
+                            rules={[{ required: true, message: 'Please enter the paths!' }]}
+                        >
+                            <Input.TextArea placeholder="Enter JSON array of paths" disabled={mode === 'view'} />
+                        </Form.Item>
+
+                        <Form.Item
+                            name="createdTime"
+                            label="Created Time"
+                            initialValue={initialValues.createdTime}
+                            rules={[{ required: true, message: 'Please enter the created time!' }]}
+                        >
+                            <Input disabled />
+                        </Form.Item>
+
+                        <Form.Item
+                            name="visible"
+                            label="Visible"
+                        >
+                            <Checkbox checked={initialValues.visible} disabled={mode === 'view'} />
+                        </Form.Item>
+                    </>
+                )}
             </Form>
 
         </Modal>
     );
 };
 
+// 添加 propTypes 验证
+AddGeofenceModal.propTypes = {
+    visible: PropTypes.bool.isRequired,
+    onCreate: PropTypes.func.isRequired,
+    onCancel: PropTypes.func.isRequired,
+    mode: PropTypes.oneOf(['add', 'edit', 'view']).isRequired,
+    record: PropTypes.shape({
+        name: PropTypes.string,
+        strokeColor: PropTypes.string,
+        fillColor: PropTypes.string,
+        paths: PropTypes.string,
+        createdTime: PropTypes.string,
+        visible: PropTypes.bool,
+    }),
+};
 export default AddGeofenceModal;
