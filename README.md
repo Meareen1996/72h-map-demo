@@ -63,7 +63,7 @@ pnpm start
 - 配置 `browserslist` 以确保项目兼容主流浏览器。
 
 ### 8. 构建与运行
-- 运行 `pnpm build` 生成生产环境的构建文件。
+- 运行 `pnpm run build` 生成生产环境的构建文件。
 - 使用 `pnpm start` 启动开发服务器。
 
 

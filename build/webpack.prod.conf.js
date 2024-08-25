@@ -1,16 +1,16 @@
-const path = require('path');
-const { merge } = require('webpack-merge');
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
-const webpackConfig = require('./webpack.config');
-const TerserPlugin = require('terser-webpack-plugin');
-const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
+const path = require("path");
+const { merge } = require("webpack-merge");
+const { CleanWebpackPlugin } = require("clean-webpack-plugin");
+const webpackConfig = require("./webpack.config");
+const TerserPlugin = require("terser-webpack-plugin");
+const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 
-'use strict';
+("use strict");
 
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = process.env.NODE_ENV === "production";
 
 module.exports = merge(webpackConfig, {
-  mode: 'production',
+  mode: "production",
   devtool: false,
   optimization: {
     minimize: isProduction,
@@ -25,15 +25,41 @@ module.exports = merge(webpackConfig, {
           },
         },
       }),
-      new CssMinimizerPlugin(), // 压缩 CSS
+      new CssMinimizerPlugin(), // Minify CSS
     ],
     splitChunks: {
-      chunks: 'all',
+      chunks: "all",
+      maxSize: 200 * 1024, // Try to keep chunks under 200 KiB
+      cacheGroups: {
+        vendors: {
+          test: /[\\/]node_modules[\\/]/,
+          name(module, chunks, cacheGroupKey) {
+            // Clean module name to prevent invalid characters
+            const moduleName = module
+              .identifier()
+              .split("/")
+              .reduceRight((item) => item)
+              .replace(/[^\w-]/g, ""); // Remove invalid characters
+
+            return `${cacheGroupKey}-${moduleName}`;
+          },
+          chunks: "all",
+          priority: -10,
+        },
+        default: {
+          minChunks: 2,
+          priority: -20,
+          reuseExistingChunk: true,
+        },
+      },
     },
   },
   plugins: [
-    new CleanWebpackPlugin(['dist'], { root: path.resolve(__dirname, '../') }),
-    
+    new CleanWebpackPlugin({
+      cleanOnceBeforeBuildPatterns: ["dist"],
+      root: path.resolve(__dirname, "../"),
+    }),
+
     // Keep modules.id stable when vendor modules do not change
     // new webpack.HashedModuleIdsPlugin(),
   ].filter(Boolean), // Filter out any falsy plugins, such as HtmlWebpackPlugin if commented out
